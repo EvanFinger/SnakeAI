@@ -6,9 +6,10 @@ from game import Game, Direction, Point, BLOCK_SIZE
 from model import Linear_QNet, QTrainer
 from helper import plot
 
-MAX_MEM = 100_000
-BATCH_SIZE = 1000
-LEARN_RATE = 0.001   
+MAX_MEM = 1_000_000
+BATCH_SIZE = 10000
+LEARN_RATE = 0.0001   
+RANDOMNESS = 100
 
 class Agent:
     
@@ -135,7 +136,7 @@ class Agent:
         # random moves: tradeoff exploration / exploitation
         # Random moves when still exploring/learning. (exploration)
         # Less random moves as the model gets better and better. (exploitation)
-        self.epsilon = 80 - self.num_games # play around with this hardcode
+        self.epsilon = RANDOMNESS - self.num_games # play around with this hardcode
         nextMove = [0, 0, 0]
         # As num games increases, if statement will be True less
         # If true, does random move

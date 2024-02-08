@@ -17,7 +17,7 @@ class Direction(Enum):
 Point = namedtuple('Point', 'x, y')
 
 # Define Constants
-BLOCK_SIZE = 20 #px
+BLOCK_SIZE = 10 #px
 
 # Define colors
 
@@ -122,7 +122,7 @@ class Game:
         
         # Check for game over conditions
         game_over = False
-        if self.find_collision() or self.frameIteration > 100 * len(self.snakeBody):
+        if self.find_collision() or self.frameIteration > 200 * len(self.snakeBody):
             # When collision occurs or snake does not find food for long time
             game_over = True
             reward = -10
