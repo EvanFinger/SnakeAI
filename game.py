@@ -47,7 +47,7 @@ class Game:
         # Initialize screen
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("SnakeAI")
-        self.FPS = 60
+        self.FPS = 600
         
         # Create screen and fps clock
         

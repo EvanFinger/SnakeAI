@@ -6,8 +6,8 @@ from game import Game, Direction, Point, BLOCK_SIZE
 from model import Linear_QNet, QTrainer
 from helper import plot
 
-MAX_MEM = 1_000_000
-BATCH_SIZE = 10000
+MAX_MEM = 100_000
+BATCH_SIZE = 1000
 LEARN_RATE = 0.0001   
 RANDOMNESS = 100
 
@@ -190,14 +190,15 @@ def train():
                 record = score
                 agent.model.save()
             
-            print('Game', agent.num_games, 'Score', score, 'Record:', record)
+            
             
             plotScores.append(score)
             totalScore += score
             meanScore = totalScore / agent.num_games
             plotMeanScores.append(meanScore)
             
-            plot(plotScores, plotMeanScores)
+            print('Game', agent.num_games, 'Score', score, 'Record:', record, 'Average:', meanScore)
+            # plot(plotScores, plotMeanScores)
             
     
 if __name__ == '__main__':
