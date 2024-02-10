@@ -17,7 +17,7 @@ class Direction(Enum):
 Point = namedtuple('Point', 'x, y')
 
 # Define Constants
-BLOCK_SIZE = 10 #px
+BLOCK_SIZE = 30 #px
 
 # Define colors
 
@@ -47,11 +47,14 @@ class Game:
         # Initialize screen
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("SnakeAI")
-        self.FPS = 600
+        self.FPS = 60
         
         # Create screen and fps clock
         
         self.fpsClock = pygame.time.Clock()
+        
+        # True if training of AI is to be ended
+        self.kill = False
         
         self.reset()
         
@@ -75,7 +78,6 @@ class Game:
         self.changeDirection = self.direction
         
         # Define initial game params
-        self.score = 0
         self.fruit = None
         self._createFruit()
         
@@ -108,10 +110,8 @@ class Game:
         self.frameIteration += 1
         
         # User Input
-        if action == None:
-            self._handleUserInput()
-        else:
-            self._agentInput(action)
+        self._handleUserInput()
+        self._agentInput(action)
         
         # Move the Snake
         self._moveSnake() # updates the head's position
@@ -122,7 +122,7 @@ class Game:
         
         # Check for game over conditions
         game_over = False
-        if self.find_collision() or self.frameIteration > 200 * len(self.snakeBody):
+        if self.find_collision() or self.frameIteration > 100 * len(self.snakeBody):
             # When collision occurs or snake does not find food for long time
             game_over = True
             reward = -10
@@ -216,16 +216,10 @@ class Game:
         """
         Handles any input comands to the game (USER INPUT - NOT AI).
         """
-        ## Move Player
+        ## End Simulation
         key = pygame.key.get_pressed()
-        if key[pygame.K_a]:
-            self.changeDirection = Direction.WEST
-        elif key[pygame.K_d]:
-            self.changeDirection = Direction.EAST
-        elif key[pygame.K_s]:
-            self.changeDirection = Direction.SOUTH
-        elif key[pygame.K_w]:
-            self.changeDirection = Direction.NORTH
+        if key[pygame.K_ESCAPE]:
+            self.kill = True
             
         ## Close Window
         for event in pygame.event.get():

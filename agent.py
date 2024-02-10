@@ -8,19 +8,32 @@ from helper import plot
 
 MAX_MEM = 100_000
 BATCH_SIZE = 1000
-LEARN_RATE = 0.0001   
+LEARN_RATE = 0.01   
 RANDOMNESS = 100
 
 class Agent:
     
-    def __init__(self) -> None:
+    def __init__(self, model_filename=None) -> None:
         """Initializes the agent's default parameters
+
+        Args:
+            loaded_model (str, optional): File name for a model to load from the model/ dir. Defaults to None.
         """
         self.num_games = 0
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate (<1)
         self.memory = deque(maxlen=MAX_MEM) # popLeft() when MAX_MEM exceeded
-        self.model = Linear_QNet(input_size=11, hidden_size=256, output_size=3)
+        
+        self.randmove = 0 # num of rand moves (testing remove later)
+        
+        # Check if model should be loaded
+        if model_filename:
+            self.model = torch.load(model_filename)
+            self.loaded_model = True
+        else:
+            self.model = Linear_QNet(input_size=11, hidden_size=256, output_size=3)
+            self.loaded_model = False
+        # Create trainer
         self.trainer = QTrainer(self.model, LEARN_RATE, self.gamma)
     
     def getState(self, game):
@@ -136,11 +149,14 @@ class Agent:
         # random moves: tradeoff exploration / exploitation
         # Random moves when still exploring/learning. (exploration)
         # Less random moves as the model gets better and better. (exploitation)
-        self.epsilon = RANDOMNESS - self.num_games # play around with this hardcode
+        
+        self.epsilon = RANDOMNESS - self.num_games
+        
         nextMove = [0, 0, 0]
         # As num games increases, if statement will be True less
         # If true, does random move
-        if random.randint(0, 200) < self.epsilon:
+        if random.randint(0, RANDOMNESS * 2 ) < self.epsilon:
+            self.randmove += 1
             move = random.randint(0, 2)
             nextMove[move] = 1
         # If False, does predicted move from model
@@ -151,6 +167,32 @@ class Agent:
             nextMove[move] = 1
         
         return nextMove
+        
+    # POSSIBLY REMOVE
+    def _calcualteEpsilon(self) -> int:
+        
+        epsilon = RANDOMNESS
+        
+        # Calculate any decreases for epsilon (randomness)
+        decrease_epsilon = self.num_games
+        if self.loaded_model: 
+            decrease_epsilon += RANDOMNESS
+        
+        # Increases randomness as model stops improving
+        increase_epsilon = self.numGamesUnimproved
+        # Limit the dynamic randomness
+        if increase_epsilon > RANDOMNESS * 0.01:
+            increase_epsilon = RANDOMNESS * 0.01
+        
+        if decrease_epsilon < epsilon:
+            epsilon -= decrease_epsilon
+            epsilon += increase_epsilon
+        else:
+            epsilon = 0 + increase_epsilon
+        
+        return epsilon
+        
+        
     
 def train():
     """Training loop for the agent and model
@@ -159,11 +201,13 @@ def train():
     plotMeanScores = []
     totalScore = 0
     record = 0
+    # agent = Agent(model_filename='model//model.pth')
     agent = Agent()
     game = Game()
     
     # Training Loop
-    while True:
+    run = True
+    while run:
         # get old state
         oldState = agent.getState(game)
         
@@ -186,20 +230,36 @@ def train():
             agent.num_games += 1
             agent.trainLongMem()
             
+            # automaticall save the model as it gets better scores
+            # also manages the dynamic randomness
             if score > record:
                 record = score
                 agent.model.save()
             
             
             
+            # plot results in pyplot (only working n pycharm)
             plotScores.append(score)
             totalScore += score
             meanScore = totalScore / agent.num_games
             plotMeanScores.append(meanScore)
             
-            print('Game', agent.num_games, 'Score', score, 'Record:', record, 'Average:', meanScore)
+            print('Game', agent.num_games, 'Score', score, 'Record:', record, 'Average:', meanScore, 'Epsi:', agent.epsilon, "Rands:", agent.randmove)\
+            #reset the rand move
+            agent.randmove = 0
             # plot(plotScores, plotMeanScores)
-            
-    
+        
+        if game.kill:
+            print('TRAINING ENDED')
+            break
+    # Print out model data-----------------------REMOVE LATER
+    for param_tensor in agent.model.state_dict():
+        print(param_tensor, "\t", agent.model.state_dict()[param_tensor].size())  
+    for var_name in agent.trainer.optimizer.state_dict():
+        print(var_name, "\t", agent.trainer.optimizer.state_dict()[var_name])
+             
+# Run the program from "python agent.py" command
 if __name__ == '__main__':
+    
+    
     train()
