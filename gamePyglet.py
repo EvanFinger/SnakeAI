@@ -44,6 +44,9 @@ class SnakeGame(pyglet.window.Window):
         self.SCREEN_WIDTH = width
         self.SCREEN_HEIGHT = height
         
+        # Init high score counter
+        self.h_score = 0
+        
         # Initialize the game window
         super().__init__(
             width=self.SCREEN_WIDTH, height=self.SCREEN_HEIGHT,
@@ -56,9 +59,9 @@ class SnakeGame(pyglet.window.Window):
      # Draws object on the game window
     def on_draw(self) -> None:
         self.clear()
+        self.score_batch.draw()
         self.snake_batch.draw() # Draw Snake
         self.fruit_G.draw() # Draw Fruit
-        self.scoreLabel.draw() # Draw Score
         
     # Event Listener
     def on_key_press(self, symbol, modifiers):
@@ -106,13 +109,26 @@ class SnakeGame(pyglet.window.Window):
             ) # Pyglet rectangle representing the fruit
         
         # Initialize the score label
+        self.score_batch = pyglet.graphics.Batch()
+        
         self.scoreLabel = pyglet.text.Label(
             '0',
             font_name='Times New Roman',
-            font_size=128,
+            font_size=64,
+            x=BLOCK_SIZE * 2,
+            y=BLOCK_SIZE * 4,
+            color=(255, 255, 255, 100),
+            batch=self.score_batch
+        )
+        
+        self.h_scoreLabel = pyglet.text.Label(
+            '0',
+            font_name='Times New Roman',
+            font_size=32,
             x=BLOCK_SIZE * 2,
             y=BLOCK_SIZE * 2,
-            color=(255, 255, 255, 100)
+            color=(255, 223, 94, 100),
+            batch=self.score_batch
         )
         
         # Set snake's initial direction of movement
@@ -159,6 +175,10 @@ class SnakeGame(pyglet.window.Window):
         # Place new food if eaten, or just move the snake
         if self._growSnake():
             reward = 10
+            
+        # Update high score
+        if self.score > self.h_score:
+            self.h_score = self.score
             
         # Update graphics
         self._updateScoreLabel()
@@ -214,8 +234,10 @@ class SnakeGame(pyglet.window.Window):
             color (pygame.Color): The color of the text label
         """
         snakeScore = str(self.score)
+        snakeHighScore = str(self.h_score)
         # Update the text in the score label
         self.scoreLabel.text = snakeScore
+        self.h_scoreLabel.text = snakeHighScore
     
     def _growSnake(self) -> bool:
         """
