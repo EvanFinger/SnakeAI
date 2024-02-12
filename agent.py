@@ -2,7 +2,7 @@ import torch
 import random
 import numpy as np
 from collections import deque
-from game import Game, Direction, Point, BLOCK_SIZE
+from gamePyglet import SnakeGame, Direction, Point, BLOCK_SIZE
 from model import Linear_QNet, QTrainer
 from helper import plot
 
@@ -203,7 +203,7 @@ def train():
     record = 0
     # agent = Agent(model_filename='model//model.pth')
     agent = Agent()
-    game = Game()
+    game = SnakeGame()
     
     # Training Loop
     run = True

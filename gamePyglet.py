@@ -47,6 +47,9 @@ class SnakeGame(pyglet.window.Window):
         # Init high score counter
         self.h_score = 0
         
+        # Init kill variable (whether or not to stop game entirely)
+        self.kill = False
+        
         # Initialize the game window
         super().__init__(
             width=self.SCREEN_WIDTH, height=self.SCREEN_HEIGHT,
@@ -74,6 +77,10 @@ class SnakeGame(pyglet.window.Window):
             self.changeDirection = Direction.EAST
         elif symbol == pyglet.window.key.A:
             self.changeDirection = Direction.WEST
+        
+        # End the game
+        if symbol == pyglet.window.key.ESCAPE:
+            self.kill = True
         
         return super().on_key_press(symbol, modifiers)
     
