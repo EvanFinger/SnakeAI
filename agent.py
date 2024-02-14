@@ -193,73 +193,72 @@ class Agent:
         return epsilon
         
         
+class AgentTrainer():
     
-def train():
-    """Training loop for the agent and model
-    """
-    plotScores = []
-    plotMeanScores = []
-    totalScore = 0
-    record = 0
-    # agent = Agent(model_filename='model//model.pth')
-    agent = Agent()
-    game = SnakeGame()
-    
-    # Training Loop
-    run = True
-    while run:
+    def __init__(self, agent:Agent, game:SnakeGame) -> None:
+        """Initializes an agent trainer, which takes an agent and trains its model.
+
+        Args:
+            agent (Agent): Agent in which the model will be trained
+            game (SnakeGame): Game where the agent is learning to play
+        """
+        # Init Variables for the Trainer
+        self.agent = agent
+        self.game = game
+        self.plotScores = []
+        self.plotMeanScores = []
+        self.totalScore = 0
+        self.record = 0
+        
+    def train(self):
+        """ Trains the agent and model for the current frame
+        """
+        
+
         # get old state
-        oldState = agent.getState(game)
+        oldState = self.agent.getState(self.game)
         
         # get the next move based on the state
-        nextMove = agent.getAction(oldState)
+        nextMove = self.agent.getAction(oldState)
         
         # perform the move and get the new game state
-        reward, gameOver, score = game.playStep(nextMove) 
-        newState = agent.getState(game)
+        reward, gameOver, score = self.game.playStep(nextMove) 
+        newState = self.agent.getState(self.game)
         
         # train short mem (1 step)
-        agent.trainShortMem(oldState, nextMove, reward, newState, gameOver)
+        self.agent.trainShortMem(oldState, nextMove, reward, newState, gameOver)
         
         # remember
-        agent.remember(oldState, nextMove, reward, newState, gameOver)
+        self.agent.remember(oldState, nextMove, reward, newState, gameOver)
         
         if gameOver:
             # train long memory and plot results of game
-            game.reset()
-            agent.num_games += 1
-            agent.trainLongMem()
+            self.game.reset()
+            self.agent.num_games += 1
+            self.agent.trainLongMem()
             
             # automaticall save the model as it gets better scores
             # also manages the dynamic randomness
-            if score > record:
+            if score > self.record:
                 record = score
-                agent.model.save()
-            
+                self.agent.model.save()
             
             
             # plot results in pyplot (only working n pycharm)
-            plotScores.append(score)
-            totalScore += score
-            meanScore = totalScore / agent.num_games
-            plotMeanScores.append(meanScore)
+            self.plotScores.append(score)
+            self.totalScore += score
+            meanScore = self.totalScore / self.agent.num_games
+            self.plotMeanScores.append(meanScore)
             
-            print('Game', agent.num_games, 'Score', score, 'Record:', record, 'Average:', meanScore, 'Epsi:', agent.epsilon, "Rands:", agent.randmove)\
+            print('Game', self.agent.num_games, 'Score', score, 'Record:', self.record, 'Average:', meanScore, 'Epsi:', self.agent.epsilon, "Rands:", self.agent.randmove)\
             #reset the rand move
-            agent.randmove = 0
+            self.agent.randmove = 0
             # plot(plotScores, plotMeanScores)
-        
-        if game.kill:
-            print('TRAINING ENDED')
-            break
+
     # Print out model data-----------------------REMOVE LATER
-    for param_tensor in agent.model.state_dict():
-        print(param_tensor, "\t", agent.model.state_dict()[param_tensor].size())  
-    for var_name in agent.trainer.optimizer.state_dict():
-        print(var_name, "\t", agent.trainer.optimizer.state_dict()[var_name])
+    # for param_tensor in agent.model.state_dict():
+    #     print(param_tensor, "\t", agent.model.state_dict()[param_tensor].size())  
+    # for var_name in agent.trainer.optimizer.state_dict():
+    #     print(var_name, "\t", agent.trainer.optimizer.state_dict()[var_name])
              
 # Run the program from "python agent.py" command
-if __name__ == '__main__':
-    
-    
-    train()

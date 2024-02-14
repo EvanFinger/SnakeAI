@@ -19,13 +19,13 @@ def AskLoadModel() -> str:
     if user_in in ['yes', 'Yes', 'y', 'Y']:
         # If user wishes to load a saved model
         return _query_saved_model()
-    elif user_in != '':
-        # If input is invalid and not 'no'
+    elif user_in in ['No', 'no', 'N', 'n', '']:
+        # If user input is 'no' (creates new model)
+        return _query_new_model_path()
+    else:
+        # If input is invalid
         return AskLoadModel()
     
-    # Do not load saved model
-    return None
-
 def _query_saved_model():
     
     saved_models = _list_saved_models()
@@ -54,3 +54,7 @@ def _list_saved_models() -> list:
 ## Asking user about Saving a new Model ##
 
 ##########################################
+
+def _query_new_model_path() -> str:
+    
+    return input('Name of new model: ') + '.pth'
