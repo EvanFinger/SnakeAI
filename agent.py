@@ -1,4 +1,5 @@
 import torch
+import os
 import random
 import numpy as np
 from collections import deque
@@ -8,18 +9,23 @@ from helper import plot
 
 MAX_MEM = 100_000
 BATCH_SIZE = 1000
-LEARN_RATE = 0.01   
+
+LEARN_RATE = 0.001
+LR_DECAY = 0.0
+
 RANDOMNESS = 100
+RAND_DECAY = 0.5
 
 class Agent:
     
-    def __init__(self, model_filename=None) -> None:
+    def __init__(self, load_model:bool, model_filename) -> None:
         """Initializes the agent's default parameters
 
         Args:
             loaded_model (str, optional): File name for a model to load from the model/ dir. Defaults to None.
         """
         self.num_games = 0
+        self.model_path = model_filename
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate (<1)
         self.memory = deque(maxlen=MAX_MEM) # popLeft() when MAX_MEM exceeded
@@ -27,11 +33,12 @@ class Agent:
         self.randmove = 0 # num of rand moves (testing remove later)
         
         # Check if model should be loaded
-        if model_filename:
-            self.model = torch.load(model_filename)
+        if load_model:
+            self.model_path = './model/' + self.model_path
+            self.model = torch.load(self.model_path)
             self.loaded_model = True
         else:
-            self.model = Linear_QNet(input_size=11, hidden_size=256, output_size=3)
+            self.model = Linear_QNet(input_size=11, hidden_size=256, output_size=3, model_filename=self.model_path)
             self.loaded_model = False
         # Create trainer
         self.trainer = QTrainer(self.model, LEARN_RATE, self.gamma)
@@ -53,8 +60,8 @@ class Agent:
         snake_head = game.snakeBody[0]
         head_w = Point(snake_head.x - BLOCK_SIZE, snake_head.y)
         head_e = Point(snake_head.x + BLOCK_SIZE, snake_head.y)
-        head_n = Point(snake_head.x, snake_head.y - BLOCK_SIZE)
-        head_s = Point(snake_head.x, snake_head.y + BLOCK_SIZE)
+        head_n = Point(snake_head.x, snake_head.y + BLOCK_SIZE)
+        head_s = Point(snake_head.x, snake_head.y - BLOCK_SIZE)
         
         direction_w = game.direction == Direction.WEST
         direction_e = game.direction == Direction.EAST
@@ -71,14 +78,14 @@ class Agent:
             # Danger Right
             (direction_s and game.find_collision(head_w)) or
             (direction_n and game.find_collision(head_e)) or
-            (direction_e and game.find_collision(head_n)) or
-            (direction_w and game.find_collision(head_s)),
+            (direction_w and game.find_collision(head_n)) or
+            (direction_e and game.find_collision(head_s)),
             
             # Danger Left
             (direction_n and game.find_collision(head_w)) or
             (direction_s and game.find_collision(head_e)) or 
-            (direction_w and game.find_collision(head_n)) or
-            (direction_e and game.find_collision(head_s)),
+            (direction_e and game.find_collision(head_n)) or
+            (direction_w and game.find_collision(head_s)),
             
             # Direction of movement
             direction_w,
@@ -89,9 +96,14 @@ class Agent:
             # Food relative location
             game.fruit.x < game.snakeHead.x, # food west
             game.fruit.x > game.snakeHead.x, # food east
-            game.fruit.y < game.snakeHead.y, # food north
-            game.fruit.y > game.snakeHead.y # food south
+            game.fruit.y > game.snakeHead.y, # food north
+            game.fruit.y < game.snakeHead.y # food south
         ]
+        # TODO: DELETE TEST PRINT BELOW
+        # os.system('clear')
+        # print(f"Danger S {state[0]} Danger Right {state[1]} Danger Left {state[2]}",
+        #       f"Dir W {state[3]} Dir E {state[4]} Dir N {state[5]} Dir S {state[6]}",
+        #       f"Fruit W {state[7]} Fruit E {state[8]} Fruit N {state[9]} Fruit S {state[10]}")
         
         return np.array(state, dtype=int)
     
@@ -150,12 +162,12 @@ class Agent:
         # Random moves when still exploring/learning. (exploration)
         # Less random moves as the model gets better and better. (exploitation)
         
-        self.epsilon = RANDOMNESS - self.num_games
+        self.epsilon = RANDOMNESS - self.num_games * RAND_DECAY
         
         nextMove = [0, 0, 0]
         # As num games increases, if statement will be True less
         # If true, does random move
-        if random.randint(0, RANDOMNESS * 2 ) < self.epsilon:
+        if random.randint(0, 200) < self.epsilon:
             self.randmove += 1
             move = random.randint(0, 2)
             nextMove[move] = 1
@@ -195,7 +207,7 @@ class Agent:
         
 class AgentTrainer():
     
-    def __init__(self, agent:Agent, game:SnakeGame) -> None:
+    def __init__(self, agent:Agent, game:SnakeGame, path:str = None) -> None:
         """Initializes an agent trainer, which takes an agent and trains its model.
 
         Args:
@@ -204,7 +216,8 @@ class AgentTrainer():
         """
         # Init Variables for the Trainer
         self.agent = agent
-        self.game = game
+        self.game = game 
+        self.model_path = path # Specifies a model to save to from the model/ directory
         self.plotScores = []
         self.plotMeanScores = []
         self.totalScore = 0
@@ -241,7 +254,11 @@ class AgentTrainer():
             # also manages the dynamic randomness
             if score > self.record:
                 record = score
-                self.agent.model.save()
+                
+                if self.model_path:
+                    self.agent.model.save(self.model_path)
+                else:
+                    self.agent.model.save()
             
             
             # plot results in pyplot (only working n pycharm)

@@ -7,21 +7,21 @@ import os
 
 #######################################
 
-def AskLoadModel() -> str:
+def AskLoadModel() -> list[str,bool]:
     """Asks user whether or not to load a saved model
 
     Returns:
-        str: path to the saved model if load is desired, None otherwise
+        list[str, bool]: path to the saved model if load is desired, and whether or not it's a load
     """
     
     user_in = input('Load saved model? [y/N]')
     
     if user_in in ['yes', 'Yes', 'y', 'Y']:
         # If user wishes to load a saved model
-        return _query_saved_model()
+        return _query_saved_model(), True
     elif user_in in ['No', 'no', 'N', 'n', '']:
         # If user input is 'no' (creates new model)
-        return _query_new_model_path()
+        return _query_new_model_path(), False
     else:
         # If input is invalid
         return AskLoadModel()
@@ -29,16 +29,17 @@ def AskLoadModel() -> str:
 def _query_saved_model():
     
     saved_models = _list_saved_models()
-    saved_models.append('Dont Load')
     
     # List saved models
     for path in saved_models:
         print(path)
         
-    user_in = input('Choose a model to load: ')
+    user_in = input('Choose a model to load ("Cancel" to cancel): ')
     
     if user_in in saved_models:
         return user_in
+    elif user_in in ['Cancel', 'cancel']:
+        return None
     else:
         print('INVALID SELECTION')
         return _query_saved_model()
@@ -57,4 +58,4 @@ def _list_saved_models() -> list:
 
 def _query_new_model_path() -> str:
     
-    return input('Name of new model: ') + '.pth'
+    return input('Name of new model: ')
